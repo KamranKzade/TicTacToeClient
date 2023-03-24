@@ -1,0 +1,17 @@
+﻿<Application x:Class="TicTacToeClientSide.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:TicTacToeClientSide"
+             StartupUri="MainWindow.xaml">
+    
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="ResourceDictionaries\Textblock.xaml"/>
+                <ResourceDictionary Source="ResourceDictionaries\ButtonStye.xaml"/>
+                <ResourceDictionary Source="ResourceDictionaries\Textbox_Style.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+    
+</Application>
