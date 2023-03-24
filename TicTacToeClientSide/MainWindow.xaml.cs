@@ -13,12 +13,16 @@ namespace TicTacToeClientSide
     {
         private const int port = 27001;
         private static readonly Socket ClientSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+        public string MySymbol { get; set; }
+        public char CurrentPlayer { get; set; }
+        public bool IsMyTurn { get; set; } = false;
 
 
         public MainWindow()
         {
             InitializeComponent();
         }
+
 
 
         private void Button_Click(object sender, RoutedEventArgs e)
@@ -32,17 +36,58 @@ namespace TicTacToeClientSide
             }
         }
 
+
+        private void ConnectToServer()
+        {
+            int attempts = 0;
+            while (!ClientSocket.Connected)
+            {
+                try
+                {
+                    ++attempts;
+                    ClientSocket.Connect(IPAddress.Parse("192.168.1.16"), port);
+
+                    var name = Player_Name.Text;
+                   
+                    if (!string.IsNullOrWhiteSpace(name))
+                        SendString($"Connected:{name}");
+                }
+                catch (Exception)
+                {
+                }
+            }
+
+            MessageBox.Show("Connected Server", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
+
+            var buffer = new byte[2048];
+            int received = ClientSocket.Receive(buffer, SocketFlags.None);
+            if (received == 0) return;
+            var data = new byte[received];
+            Array.Copy(buffer, data, received);
+
+            string text = Encoding.ASCII.GetString(data);
+            MySymbol = text;
+            CurrentPlayer = text[0];
+            this.Title = "Player : " + text;
+            this.player.Text = this.Title;
+            if (MySymbol == "X")
+                IsMyTurn = true;
+            else if (MySymbol == "O")
+                IsMyTurn = false;
+        }
+
+
         private void RequestLoop()
         {
             var receiver = Task.Run(() =>
             {
                 while (true)
                 {
+                    EnabledAllButtons(IsMyTurn);
                     ReceiveResponse();
                 }
             });
         }
-
 
         private void ReceiveResponse()
         {
@@ -50,14 +95,16 @@ namespace TicTacToeClientSide
             int received = ClientSocket.Receive(buffer, SocketFlags.None);
             if (received == 0) return;
             var data = new byte[received];
+
             Array.Copy(buffer, data, received);
             string text = Encoding.ASCII.GetString(data);
             IntegrateToView(text);
         }
-        public bool HasSecondPlayerStart { get; set; } = false;
+
 
         private void IntegrateToView(string text)
         {
+
             App.Current.Dispatcher.Invoke(() =>
             {
                 var data = text.Split('\n');
@@ -76,38 +123,53 @@ namespace TicTacToeClientSide
                 b7.Content = row3[0];
                 b8.Content = row3[1];
                 b9.Content = row3[2];
-                // EnabledAllButtons(true);
+
+                int x_say = 0;
+                int o_say = 0;
+
+                for (int i = 0; i < row1.Length; i++)
+                {
+                    if (row1[i] == "X") x_say++;
+                    else if (row1[i] == "O") o_say++;
+                }
+                for (int i = 0; i < row2.Length; i++)
+                {
+                    if (row2[i] == "X") x_say++;
+                    else if (row2[i] == "O") o_say++;
+                }
+                for (int i = 0; i < row3.Length; i++)
+                {
+                    if (row3[i] == "X") x_say++;
+                    else if (row3[i] == "O") o_say++;
+                }
+                if (x_say % 2 == 1 && o_say % 2 == 0 || x_say % 2 == 0 && o_say % 2 == 1)
+                {
+                    if (CurrentPlayer == 'X')
+                    {
+                        IsMyTurn = false;
+                    }
+                    else
+                    {
+                        IsMyTurn = true;
+                    }
+                }
+                else
+                {
+                    if (CurrentPlayer == 'X')
+                    {
+                        IsMyTurn = true;
+                    }
+                    else
+                    {
+                        IsMyTurn = false;
+                    }
+                }
+
+                //EnabledAllButtons(true);
             });
         }
 
-        private void ConnectToServer()
-        {
-            int attempts = 0;
-            while (!ClientSocket.Connected)
-            {
-                try
-                {
-                    ++attempts;
-                    ClientSocket.Connect(IPAddress.Parse("10.2.13.15"), port);
-                }
-                catch (Exception)
-                {
-                }
-            }
 
-            MessageBox.Show("Connected");
-
-            var buffer = new byte[2048];
-            int received = ClientSocket.Receive(buffer, SocketFlags.None);
-            if (received == 0) return;
-            var data = new byte[received];
-            Array.Copy(buffer, data, received);
-
-            string text = Encoding.ASCII.GetString(data);
-            this.Title = "Player : " + text;
-            this.player.Text = this.Title;
-
-        }
         private void b1_Click(object sender, RoutedEventArgs e)
         {
             Task.Run(() =>
@@ -117,8 +179,6 @@ namespace TicTacToeClientSide
                     var bt = sender as Button;
                     string request = bt.Content.ToString() + player.Text.Split(' ')[2];
                     SendString(request);
-
-                    // EnabledAllButtons(false);
                 });
             });
         }
