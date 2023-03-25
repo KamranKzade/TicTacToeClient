@@ -11,11 +11,14 @@ namespace TicTacToeClientSide
 {
     public partial class MainWindow : Window
     {
+        public bool IsMyTurn { get; set; } = false;
+        public bool HasWonned { get; set; } = false;
+
         private const int port = 27001;
         private static readonly Socket ClientSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+
         public string MySymbol { get; set; }
         public char CurrentPlayer { get; set; }
-        public bool IsMyTurn { get; set; } = false;
 
 
         public MainWindow()
@@ -76,7 +79,6 @@ namespace TicTacToeClientSide
                 IsMyTurn = false;
         }
 
-        public bool HasWonned { get; set; } = false;
 
         private void RequestLoop()
         {
@@ -84,27 +86,37 @@ namespace TicTacToeClientSide
             {
                 while (true)
                 {
-                    if (!HasWonned)
-                    {
-                        EnabledAllButtons(IsMyTurn);
-                        ReceiveResponse();
-                    }
-                    else
+                    EnabledAllButtons(IsMyTurn);
+                    ReceiveResponse();
+                    if (HasWonned && !IsMyTurn)
                     {
                         App.Current.Dispatcher.Invoke(() =>
                         {
                             MessageBox.Show($"Congratulations: {Player_Name.Text}\n YOU WOOOOOONNNN", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
-                            ClientSocket.Close();
-                            ClientSocket.Dispose();
-                            Application.Current.Shutdown();
+                            Exit_Game();
                         });
                         break;
                     }
+                    else if (HasWonned && IsMyTurn)
+                    {
+                        App.Current.Dispatcher.Invoke(() =>
+                        {
+                            MessageBox.Show($"Unfortunately: {Player_Name.Text}\n YOU LOSE", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
+                            Exit_Game();
+                        });
+                        break;
+                    }
+
                 }
             });
         }
 
-
+        private static void Exit_Game()
+        {
+            ClientSocket.Close();
+            ClientSocket.Dispose();
+            Application.Current.Shutdown();
+        }
 
         private void ReceiveResponse()
         {
@@ -177,19 +189,15 @@ namespace TicTacToeClientSide
 
                 //EnabledAllButtons(true);
 
-                if (
-                       (row1[0] == "X" && row1[1] == "X" && row1[2] == "X") || (row2[0] == "X" && row2[1] == "X" && row2[2] == "X") || (row3[0] == "X" && row3[1] == "X" && row3[2] == "X")
+                if ((row1[0] == "X" && row1[1] == "X" && row1[2] == "X") || (row2[0] == "X" && row2[1] == "X" && row2[2] == "X") || (row3[0] == "X" && row3[1] == "X" && row3[2] == "X")
                     || (row1[0] == "X" && row2[1] == "X" && row3[2] == "X") || (row3[0] == "X" && row2[1] == "X" && row1[3] == "X")
                     || (row1[0] == "X" && row2[0] == "X" && row3[0] == "X") || (row1[1] == "X" && row2[1] == "X" && row3[1] == "X") || (row1[2] == "X" && row2[2] == "X" && row3[2] == "X")
                     || (row1[0] == "O" && row1[1] == "O" && row1[2] == "O") || (row2[0] == "O" && row2[1] == "O" && row2[2] == "O") || (row3[0] == "O" && row3[1] == "O" && row3[2] == "O")
                     || (row1[0] == "O" && row2[1] == "O" && row3[2] == "O") || (row3[0] == "O" && row2[1] == "O" && row1[3] == "O")
-                    || (row1[0] == "O" && row2[0] == "O" && row3[0] == "O") || (row1[1] == "O" && row2[1] == "O" && row3[1] == "O") || (row1[2] == "O" && row2[2] == "O" && row3[2] == "O")
-                    )
+                    || (row1[0] == "O" && row2[0] == "O" && row3[0] == "O") || (row1[1] == "O" && row2[1] == "O" && row3[1] == "O") || (row1[2] == "O" && row2[2] == "O" && row3[2] == "O"))
                 {
                     HasWonned = true;
                 }
-
-
             });
         }
 
@@ -212,12 +220,9 @@ namespace TicTacToeClientSide
             App.Current.Dispatcher.Invoke(() =>
                 {
                     foreach (var item in myWrap.Children)
-                    {
                         if (item is Button bt)
-                        {
                             bt.IsEnabled = enabled;
-                        }
-                    }
+
                 });
         }
 
