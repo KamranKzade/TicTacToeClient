@@ -48,7 +48,7 @@ namespace TicTacToeClientSide
                     ClientSocket.Connect(IPAddress.Parse("192.168.1.16"), port);
 
                     var name = Player_Name.Text;
-                   
+
                     if (!string.IsNullOrWhiteSpace(name))
                         SendString($"Connected:{name}");
                 }
@@ -185,13 +185,16 @@ namespace TicTacToeClientSide
 
         public void EnabledAllButtons(bool enabled)
         {
-            foreach (var item in myWrap.Children)
-            {
-                if (item is Button bt)
+            App.Current.Dispatcher.Invoke(() =>
                 {
-                    bt.IsEnabled = enabled;
-                }
-            }
+                    foreach (var item in myWrap.Children)
+                    {
+                        if (item is Button bt)
+                        {
+                            bt.IsEnabled = enabled;
+                        }
+                    }
+                });
         }
 
         private void SendString(string request)
