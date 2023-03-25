@@ -76,6 +76,7 @@ namespace TicTacToeClientSide
                 IsMyTurn = false;
         }
 
+        public bool HasWonned { get; set; } = false;
 
         private void RequestLoop()
         {
@@ -83,11 +84,27 @@ namespace TicTacToeClientSide
             {
                 while (true)
                 {
-                    EnabledAllButtons(IsMyTurn);
-                    ReceiveResponse();
+                    if (!HasWonned)
+                    {
+                        EnabledAllButtons(IsMyTurn);
+                        ReceiveResponse();
+                    }
+                    else
+                    {
+                        App.Current.Dispatcher.Invoke(() =>
+                        {
+                            MessageBox.Show($"Congratulations: {Player_Name.Text}\n YOU WOOOOOONNNN", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
+                            ClientSocket.Close();
+                            ClientSocket.Dispose();
+                            Application.Current.Shutdown();
+                        });
+                        break;
+                    }
                 }
             });
         }
+
+
 
         private void ReceiveResponse()
         {
@@ -142,30 +159,37 @@ namespace TicTacToeClientSide
                     if (row3[i] == "X") x_say++;
                     else if (row3[i] == "O") o_say++;
                 }
+
                 if (x_say % 2 == 1 && o_say % 2 == 0 || x_say % 2 == 0 && o_say % 2 == 1)
                 {
                     if (CurrentPlayer == 'X')
-                    {
                         IsMyTurn = false;
-                    }
                     else
-                    {
                         IsMyTurn = true;
-                    }
                 }
                 else
                 {
                     if (CurrentPlayer == 'X')
-                    {
                         IsMyTurn = true;
-                    }
                     else
-                    {
                         IsMyTurn = false;
-                    }
                 }
 
                 //EnabledAllButtons(true);
+
+                if (
+                       (row1[0] == "X" && row1[1] == "X" && row1[2] == "X") || (row2[0] == "X" && row2[1] == "X" && row2[2] == "X") || (row3[0] == "X" && row3[1] == "X" && row3[2] == "X")
+                    || (row1[0] == "X" && row2[1] == "X" && row3[2] == "X") || (row3[0] == "X" && row2[1] == "X" && row1[3] == "X")
+                    || (row1[0] == "X" && row2[0] == "X" && row3[0] == "X") || (row1[1] == "X" && row2[1] == "X" && row3[1] == "X") || (row1[2] == "X" && row2[2] == "X" && row3[2] == "X")
+                    || (row1[0] == "O" && row1[1] == "O" && row1[2] == "O") || (row2[0] == "O" && row2[1] == "O" && row2[2] == "O") || (row3[0] == "O" && row3[1] == "O" && row3[2] == "O")
+                    || (row1[0] == "O" && row2[1] == "O" && row3[2] == "O") || (row3[0] == "O" && row2[1] == "O" && row1[3] == "O")
+                    || (row1[0] == "O" && row2[0] == "O" && row3[0] == "O") || (row1[1] == "O" && row2[1] == "O" && row3[1] == "O") || (row1[2] == "O" && row2[2] == "O" && row3[2] == "O")
+                    )
+                {
+                    HasWonned = true;
+                }
+
+
             });
         }
 
